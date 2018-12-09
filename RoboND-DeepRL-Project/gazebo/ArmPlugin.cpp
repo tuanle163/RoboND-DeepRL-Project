@@ -33,22 +33,22 @@
 
 // TODO - Tune the following hyperparameters
 
-#define INPUT_WIDTH		512
-#define INPUT_HEIGHT	512
+#define INPUT_WIDTH		64			//original: 512
+#define INPUT_HEIGHT	64			//original: 512
 #define OPTIMIZER		"RMSprop"	// RMSprop, Adam, AdaGrad, None
-#define LEARNING_RATE	0.1f
+#define LEARNING_RATE	0.03f
 #define REPLAY_MEMORY	10000
-#define BATCH_SIZE		32
+#define BATCH_SIZE		128
 #define USE_LSTM		true
 #define LSTM_SIZE		256
 #define NUM_ACTIONS		DOF*2
 
 
 // TODO - Define Reward Parameters
-#define REWARD_WIN		100.0f
-#define REWARD_LOSS		-100.0f
-#define REWARD_MULT		50.0f
-#define alpha			0.2f
+#define REWARD_WIN		10.0f
+#define REWARD_LOSS		-10.0f
+#define REWARD_MULT		6.67f
+#define alpha			0.3f
 
 // Define Object Names
 #define WORLD_NAME "arm_world"
@@ -64,7 +64,7 @@
 #define ANIMATION_STEPS 1000
 
 // Set Debug Mode
-#define DEBUG true
+#define DEBUG false
 
 // Lock base rotation DOF (Add dof in header file if off)
 #define LOCKBASE true
@@ -252,20 +252,15 @@ void ArmPlugin::onCollisionMsg(ConstContactsPtr &contacts)
 		{
 			//Collision reward
 			rewardHistory = REWARD_WIN;
-
 			newReward  = true;
 			endEpisode = true;
-        }else
+        } else {
 			//No collision 
-			rewardHistory = REWARD_LOSS * 1.0f;
+			rewardHistory = REWARD_LOSS * 0.01f;
 			newReward = true;
 			endEpisode = false;
-        {
-
+        }
 			return;
-		}
-		
-		
 	}
 }
 
@@ -313,8 +308,8 @@ bool ArmPlugin::updateAgent()
 	/
 	*/
 	
-	float velocity = 0.0; // TODO - Set joint velocity based on whether action is even or odd.
-
+	//float velocity = 0.0; // TODO - Set joint velocity based on whether action is even or odd.
+	//float velocity = vel[action/2] + actionVelDelta * ((action % 2 == 0) ? 1.0f : -1.0f);
 	if( velocity < VELOCITY_MIN )
 		velocity = VELOCITY_MIN;
 
@@ -344,9 +339,10 @@ bool ArmPlugin::updateAgent()
 	/ TODO - Increase or decrease the joint position based on whether the action is even or odd
 	/
 	*/
-	
-	float joint = ref[action/2] + actionJointDelta * ((action % 2 == 0) ? 1.0f : -1.0f); 
-  // TODO - Set joint position based on whether action is even or odd.
+	//float joint = 0.0f;
+	const int i = action / 2;
+	float joint = ref[i] + actionJointDelta * ((action % 2 == 0) ? 1.0f : -1.0f); 
+	//TODO - Set joint position based on whether action is even or odd.
 
 	// limit the joint to the specified range
 	if( joint < JOINT_MIN )
@@ -355,7 +351,7 @@ bool ArmPlugin::updateAgent()
 	if( joint > JOINT_MAX )
 		joint = JOINT_MAX;
 
-	ref[action/2] = joint;
+	ref[i] = joint;
 
 #endif
 
@@ -585,8 +581,6 @@ void ArmPlugin::OnUpdate(const common::UpdateInfo& updateInfo)
 		/ TODO - Issue an interim reward based on the distance to the object
 		/
 		*/ 
-		
-		
 		else
 		{
 			const float distGoal = BoxDistance(gripBBox, propBBox); // compute the reward from distance to the goal
