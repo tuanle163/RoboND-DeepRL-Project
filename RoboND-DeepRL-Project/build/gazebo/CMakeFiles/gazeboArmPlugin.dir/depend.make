@@ -277,11 +277,9 @@ gazebo/CMakeFiles/gazeboArmPlugin.dir/ArmPlugin.cpp.o: /usr/include/ignition/mat
 gazebo/CMakeFiles/gazeboArmPlugin.dir/ArmPlugin.cpp.o: /usr/include/ignition/math2/ignition/math/Frustum.hh
 gazebo/CMakeFiles/gazeboArmPlugin.dir/ArmPlugin.cpp.o: /usr/include/ignition/math2/ignition/math/Helpers.hh
 gazebo/CMakeFiles/gazeboArmPlugin.dir/ArmPlugin.cpp.o: /usr/include/ignition/math2/ignition/math/IndexException.hh
-gazebo/CMakeFiles/gazeboArmPlugin.dir/ArmPlugin.cpp.o: /usr/include/ignition/math2/ignition/math/Inertial.hh
 gazebo/CMakeFiles/gazeboArmPlugin.dir/ArmPlugin.cpp.o: /usr/include/ignition/math2/ignition/math/Kmeans.hh
 gazebo/CMakeFiles/gazeboArmPlugin.dir/ArmPlugin.cpp.o: /usr/include/ignition/math2/ignition/math/Line2.hh
 gazebo/CMakeFiles/gazeboArmPlugin.dir/ArmPlugin.cpp.o: /usr/include/ignition/math2/ignition/math/Line3.hh
-gazebo/CMakeFiles/gazeboArmPlugin.dir/ArmPlugin.cpp.o: /usr/include/ignition/math2/ignition/math/MassMatrix3.hh
 gazebo/CMakeFiles/gazeboArmPlugin.dir/ArmPlugin.cpp.o: /usr/include/ignition/math2/ignition/math/Matrix3.hh
 gazebo/CMakeFiles/gazeboArmPlugin.dir/ArmPlugin.cpp.o: /usr/include/ignition/math2/ignition/math/Matrix4.hh
 gazebo/CMakeFiles/gazeboArmPlugin.dir/ArmPlugin.cpp.o: /usr/include/ignition/math2/ignition/math/Plane.hh
