@@ -12,13 +12,13 @@
 
 #define PI 3.141592653589793238462643383279502884197169f
 
-#define JOINT_MIN	-0.75f
-#define JOINT_MAX	 2.0f
+#define JOINT_MIN	-0.75f //Default: -0.75f
+#define JOINT_MAX	 2.0f //Default: 2.0f
 
 // Turn on velocity based control
-#define VELOCITY_CONTROL false
-#define VELOCITY_MIN -0.2f
-#define VELOCITY_MAX  0.2f
+#define VELOCITY_CONTROL true
+#define VELOCITY_MIN -0.1f //Default: -0.2f
+#define VELOCITY_MAX  0.1f //Default: 0.2f
 
 // Define DQN API Settings
 
@@ -36,19 +36,19 @@
 #define INPUT_WIDTH		64			//original: 512
 #define INPUT_HEIGHT	64			//original: 512
 #define OPTIMIZER		"RMSprop"	// RMSprop, Adam, AdaGrad, None
-#define LEARNING_RATE	0.03f
+#define LEARNING_RATE	0.01f
 #define REPLAY_MEMORY	10000
-#define BATCH_SIZE		128
+#define BATCH_SIZE		64
 #define USE_LSTM		true
-#define LSTM_SIZE		256
+#define LSTM_SIZE		128
 #define NUM_ACTIONS		DOF*2
 
 
 // TODO - Define Reward Parameters
-#define REWARD_WIN		10.0f
-#define REWARD_LOSS		-10.0f
-#define REWARD_MULT		6.67f
-#define alpha			0.3f
+#define REWARD_WIN		100.0f
+#define REWARD_LOSS		-100.0f
+#define Interim_REWARD		10.0f
+#define alpha			0.35f
 
 // Define Object Names
 #define WORLD_NAME "arm_world"
@@ -61,13 +61,16 @@
 #define COLLISION_POINT  "arm::gripperbase::gripper_link"
 
 // Animation Steps
-#define ANIMATION_STEPS 1000
+#define ANIMATION_STEPS 5000 //Default: 1000
 
 // Set Debug Mode
 #define DEBUG false
 
-// Lock base rotation DOF (Add dof in header file if off)
+// Lock base rotation DOF(Add dof in header file if off)
 #define LOCKBASE true
+
+// Gripper task on/off
+#define GRIPPER true
 
 
 namespace gazebo
@@ -247,19 +250,25 @@ void ArmPlugin::onCollisionMsg(ConstContactsPtr &contacts)
 		/
 		*/
 		
-
-		if ((strcmp(contacts->contact(i).collision1().c_str(), COLLISION_ITEM  ) == 0))
+		bool arm_collision = (strcmp(contacts->contact(i).collision1().c_str(), COLLISION_ITEM  ) == 0);
+		bool gripper_collision = (strcmp(contacts->contact(i).collision2().c_str(), COLLISION_POINT ) == 0);
+#if GRIPPER
+		if (gripper_collision)
 		{
 			//Collision reward
 			rewardHistory = REWARD_WIN;
 			newReward  = true;
 			endEpisode = true;
-        } else {
-			//No collision 
-			rewardHistory = REWARD_LOSS * 0.01f;
-			newReward = true;
-			endEpisode = false;
+        } 
+#else
+		if (arm_collision)
+        {
+			//Collision reward
+			rewardHistory = REWARD_WIN;
+			newReward  = true;
+			endEpisode = true;
         }
+#endif
 			return;
 	}
 }
@@ -308,8 +317,9 @@ bool ArmPlugin::updateAgent()
 	/
 	*/
 	
-	//float velocity = 0.0; // TODO - Set joint velocity based on whether action is even or odd.
-	//float velocity = vel[action/2] + actionVelDelta * ((action % 2 == 0) ? 1.0f : -1.0f);
+	// TODO - Set joint velocity based on whether action is even or odd.
+
+	float velocity = vel[action/2] + actionVelDelta * ((action % 2 == 0) ? 1.0f : -1.0f);
 	if( velocity < VELOCITY_MIN )
 		velocity = VELOCITY_MIN;
 
@@ -339,9 +349,8 @@ bool ArmPlugin::updateAgent()
 	/ TODO - Increase or decrease the joint position based on whether the action is even or odd
 	/
 	*/
-	//float joint = 0.0f;
-	const int i = action / 2;
-	float joint = ref[i] + actionJointDelta * ((action % 2 == 0) ? 1.0f : -1.0f); 
+
+	float joint = ref[action / 2] + actionJointDelta * ((action % 2 == 0) ? 1.0f : -1.0f); 
 	//TODO - Set joint position based on whether action is even or odd.
 
 	// limit the joint to the specified range
@@ -351,7 +360,7 @@ bool ArmPlugin::updateAgent()
 	if( joint > JOINT_MAX )
 		joint = JOINT_MAX;
 
-	ref[i] = joint;
+	ref[action/2] = joint;
 
 #endif
 
@@ -559,7 +568,7 @@ void ArmPlugin::OnUpdate(const common::UpdateInfo& updateInfo)
 
 		// get the bounding box for the gripper		
 		const math::Box& gripBBox = gripper->GetBoundingBox();
-		const float groundContact = 0.05f;
+		const float groundContact = 0.03f;
 		
 		/*
 		/ TODO - set appropriate Reward for robot hitting the ground.
@@ -568,7 +577,6 @@ void ArmPlugin::OnUpdate(const common::UpdateInfo& updateInfo)
 		
 		if( gripBBox.min.z <= groundContact || gripBBox.max.z <= groundContact )
 		{
-						
 			if(DEBUG){printf("GROUND CONTACT, EOE\n");}
 			// Set reward to reward at loss
 			rewardHistory = REWARD_LOSS;
@@ -584,20 +592,17 @@ void ArmPlugin::OnUpdate(const common::UpdateInfo& updateInfo)
 		else
 		{
 			const float distGoal = BoxDistance(gripBBox, propBBox); // compute the reward from distance to the goal
-
 			//if(DEBUG){printf("distance('%s', '%s') = %f\n", gripper->GetName().c_str(), prop->model->GetName().c_str(), distGoal);}
-
-			
 			if( episodeFrames > 1 )
 			{
 				const float distDelta  = lastGoalDistance - distGoal;
 				// compute the smoothed moving average of the delta of the distance to the goal
 				avgGoalDelta  = (avgGoalDelta * alpha) + (distDelta * (1.0 - alpha));
-				rewardHistory = (avgGoalDelta) * REWARD_MULT;
+				// printf("Current avgDelta: %f \n", avgGoalDelta);
+				rewardHistory = (avgGoalDelta) * Interim_REWARD;
 				if (DEBUG) printf("Current reward: %f \n", rewardHistory);
 				newReward     = true;	
 			}
-
 			lastGoalDistance = distGoal;
 		} 
 	}
