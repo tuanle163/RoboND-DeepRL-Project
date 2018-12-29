@@ -17,8 +17,8 @@
 
 // Turn on velocity based control
 #define VELOCITY_CONTROL false
-#define VELOCITY_MIN -0.1f //Default: -0.2f
-#define VELOCITY_MAX  0.1f //Default: 0.2f
+#define VELOCITY_MIN -0.2f //Default: -0.2f
+#define VELOCITY_MAX  0.2f //Default: 0.2f
 
 // Define DQN API Settings
 
@@ -36,7 +36,7 @@
 #define INPUT_WIDTH		64			//original: 512
 #define INPUT_HEIGHT	64			//original: 512
 #define OPTIMIZER		"RMSprop"	// RMSprop, Adam, AdaGrad, None
-#define LEARNING_RATE	0.01f
+#define LEARNING_RATE	0.02f
 #define REPLAY_MEMORY	10000
 #define BATCH_SIZE		64
 #define USE_LSTM		true
@@ -70,7 +70,7 @@
 #define LOCKBASE true
 
 // Gripper task on/off
-#define GRIPPER true
+#define GRIPPER false
 
 
 namespace gazebo
@@ -320,7 +320,7 @@ bool ArmPlugin::updateAgent()
 	*/
 	// TODO - Set joint velocity based on whether action is even or odd.
 
-	float velocity = vel[action/2] + actionVelDelta * ((action % 2 == 0) ? 1.0f : -1.0f);
+	float velocity = vel[action/2] + actionVelDelta * ((action % 2 == 0) ? 0.5f : -0.5f);
 	if( velocity < VELOCITY_MIN )
 		velocity = VELOCITY_MIN;
 
@@ -351,7 +351,7 @@ bool ArmPlugin::updateAgent()
 	/
 	*/
 
-	float joint = ref[action / 2] + actionJointDelta * ((action % 2 == 0) ? 1.0f : -1.0f); 
+	float joint = ref[action/2] + actionJointDelta * ((action % 2 == 0) ? 1.0f : -1.0f); 
 	//TODO - Set joint position based on whether action is even or odd.
 
 	// limit the joint to the specified range
@@ -607,7 +607,7 @@ void ArmPlugin::OnUpdate(const common::UpdateInfo& updateInfo)
 				rewardHistory = (avgGoalDelta) * Interim_REWARD * 0.1f;
                 }
 #else 
-				rewardhistory = (avgGoalDelta) * Interim_REWARD;
+				rewardHistory = (avgGoalDelta) * Interim_REWARD;
 #endif
 				//printf("Current reward: %f \n", rewardHistory);
 				newReward     = true;	
